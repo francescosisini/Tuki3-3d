@@ -1,3 +1,4 @@
+#include "tuki3.h"
 #include "Utils.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,6 +9,7 @@
 //gcc -o c4 chapter.4.1.c Utils.c -lglut -lGL -lGLU -lGLEW -lm
 
 #define WINDOW_TITLE_PREFIX "Chapter 1"
+#define N_BUFFERS (NUMERO_OGGETTI+1+1)*2 // (oggetti+tuki+ground)*2
 
 int
   CurrentWidth = 800,
@@ -18,8 +20,8 @@ GLuint
   ProjectionMatrixUniformLocation,
   ViewMatrixUniformLocation,
   ModelMatrixUniformLocation,
-  VAO[3]={ 0 },
-  BufferIds[6] = { 0 },
+  VAO[N_BUFFERS/2]={ 0 },
+  BufferIds[N_BUFFERS] = { 0 },
   ShaderIds[3] = { 0 };
 
 Matrix
@@ -31,6 +33,8 @@ float CubeRotation = 0;
 float CubePosition = 0;
 clock_t LastTime = 0;
 
+/*** Variabili del gioco ***/
+extern Giocatore gctr_tuki;
 
 
 void Initialize(int, char*[]);
@@ -39,13 +43,13 @@ void ResizeFunction(int, int);
 void RenderFunction(void);
 void TimerFunction(int);
 void IdleFunction(void);
-void CreateCube(void);
-void CreateSecondCube(void);
-void CreateGround(void);
+void create_tuki(void);
+void create_object(int i);
+void create_ground(void);
 void DestroyCube(void);
-void DrawCube(void);
-void DrawSecondCube(void);
-void DrawGround(void);
+void draw_tuki(void);
+void draw_object(int o_index);
+void draw_ground(void);
 int main_controller();
 /*
 int main(int argc, char* argv[])
@@ -96,9 +100,12 @@ void Initialize(int argc, char* argv[])
   ViewMatrix = IDENTITY_MATRIX;
   TranslateMatrix(&ViewMatrix, 0, 0, -5);
   RotateAboutY(&ViewMatrix, PI/8.);
-  CreateCube();
-  CreateSecondCube();
-  CreateGround();
+  create_tuki();
+  for(int i=0;i<NUMERO_OGGETTI;i++)
+    {
+      create_object(i);
+    }
+  create_ground();
   
 }
 
@@ -166,9 +173,12 @@ void RenderFunction(void)
   */
   ViewMatrix = IDENTITY_MATRIX;
   TranslateMatrix(&ViewMatrix,-CubePosition, 0, -2);
-  DrawCube();
-  DrawSecondCube();
-  DrawGround();
+  draw_tuki();
+  for(int i=0;i<NUMERO_OGGETTI;i++)
+    {
+      draw_object(i);
+    }
+  draw_ground();
   glutSwapBuffers();
   glutPostRedisplay();
 }
@@ -201,7 +211,7 @@ void TimerFunction(int Value)
   glutTimerFunc(250, TimerFunction, 1);
 }
 
-void CreateCube(void)
+void create_tuki(void)
 {
   const Vertex VERTICES[8] =
     {
@@ -270,7 +280,7 @@ void CreateCube(void)
   glBindVertexArray(0);
 }
 
-void CreateSecondCube(void)
+void create_object(int i)
 {
   const Vertex VERTICES[8] =
     {
@@ -312,19 +322,19 @@ void CreateSecondCube(void)
   ProjectionMatrixUniformLocation = glGetUniformLocation(ShaderIds[0], "ProjectionMatrix");
   ExitOnGLError("ERROR: Could not get the shader uniform locations");
 
-  glGenBuffers(2, &BufferIds[4]);
+  glGenBuffers(2, &BufferIds[4+i*2]);
   ExitOnGLError("ERROR: Could not generate the buffer objects");
 
-  glGenVertexArrays(1, &VAO[2]);
+  glGenVertexArrays(1, &VAO[2+i]);
   ExitOnGLError("ERROR: Could not generate the VAO");
-  glBindVertexArray(VAO[2]);
+  glBindVertexArray(VAO[2+i]);
   ExitOnGLError("ERROR: Could not bind the VAO");
 
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
   ExitOnGLError("ERROR: Could not enable vertex attributes");
 
-  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[4]);
+  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[4+i*2]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
   ExitOnGLError("ERROR: Could not bind the VBO to the VAO");
   
@@ -332,7 +342,7 @@ void CreateSecondCube(void)
   glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
   ExitOnGLError("ERROR: Could not set VAO attributes");
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[5]);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[5+i*2]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(INDICES), INDICES, GL_STATIC_DRAW);
   ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
   
@@ -340,7 +350,7 @@ void CreateSecondCube(void)
 }
 
 
-void CreateGround(void)
+void create_ground(void)
 {
   const Vertex VERTICES[4] =
     {
@@ -411,13 +421,13 @@ void DestroyCube(void)
   ExitOnGLError("ERROR: Could not destroy the buffer objects");
 }
 
-void DrawCube(void)
+void draw_tuki(void)
 {
   float CubeAngle;
   clock_t Now = clock();
   if (LastTime == 0)
     LastTime = Now;
-  CubePosition += 0.001;
+  
   CubeRotation += 10.0f * ((float)(Now - LastTime) /1000.);
   CubeAngle = DegreesToRadians(CubeRotation);
   LastTime = Now;
@@ -425,7 +435,7 @@ void DrawCube(void)
   ModelMatrix = IDENTITY_MATRIX;
   RotateAboutY(&ModelMatrix, CubeAngle);
   RotateAboutX(&ModelMatrix, CubeAngle);
-  TranslateMatrix(&ModelMatrix, CubePosition, 0, 0);
+  TranslateMatrix(&ModelMatrix, gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO, 0, 0);
   
   glUseProgram(ShaderIds[0]);
   ExitOnGLError("ERROR: Could not use the shader program, cazzo");
@@ -445,20 +455,16 @@ void DrawCube(void)
       
 }
 
-void DrawSecondCube(void)
+void draw_object(int o_index)
 {
   float CubeAngle;
-  clock_t Now = clock();
-  if (LastTime == 0)
-    LastTime = Now;
-  
-  CubeRotation += 10.0f * ((float)(Now - LastTime) /1000.);
-  CubeAngle = DegreesToRadians(CubeRotation);
-  LastTime = Now;
-
+  int i = o_index;
+    
   ModelMatrix = IDENTITY_MATRIX;
   //RotateAboutY(&ModelMatrix, CubeAngle);
-  TranslateMatrix(&ModelMatrix, 0.5, 0, 0.15);
+  ScaleMatrix(&ModelMatrix, 0.2,0.2, 0.2);
+  TranslateMatrix(&ModelMatrix, (double)i/10.,0, 0.1);
+  
     
   glUseProgram(ShaderIds[0]);
   ExitOnGLError("ERROR: Could not use the shader program, cazzo");
@@ -467,20 +473,20 @@ void DrawSecondCube(void)
   glUniformMatrix4fv(ViewMatrixUniformLocation, 1, GL_FALSE, ViewMatrix.m);
   ExitOnGLError("ERROR: Could not set the shader uniforms");
 
-  glBindVertexArray(VAO[2]);
+  glBindVertexArray(VAO[2+i]);
   ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
   
   glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (GLvoid*)0);
   ExitOnGLError("ERROR: Could not draw the cube");
   
-  glBindVertexArray(2);
+  glBindVertexArray(2+i);
   glUseProgram(0);
   
     
 }
 
 
-void DrawGround(void)
+void draw_ground(void)
 {
   float CubeAngle;
   clock_t Now = clock();
