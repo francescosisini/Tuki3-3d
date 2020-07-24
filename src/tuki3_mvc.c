@@ -187,8 +187,8 @@ int main_controller()
       
       if(cm)
 	{
-	  fine_giocatore(cm);
-              exit(0);
+	  //fine_giocatore(cm);
+	  // exit(0);
 	}
       
       delay(GDELAY);
@@ -238,7 +238,7 @@ int main(int argc,char* argv[])
   /* Prepara gli oggetti sul campo e li trasfigura in base alla difficoltà del livello */
   for(int i=0;i<NUMERO_OGGETTI;i++){
     k=rand()%3;
-    int x=(i+2)*((float)LUNGHEZZA_CAMMINO/(float)NUMERO_OGGETTI);    
+    int x=(i+2)*((float)(LUNGHEZZA_CAMMINO-LUNGHEZZA_CAMMINO_VISIBILE)/(float)NUMERO_OGGETTI);    
     switch (k){
     case GEMMA:
       model_oggetto(GEMMA,GEMMA_NTRL,GEMMA_NRGY,GEMMA_TOX,x,1,ob+i);
