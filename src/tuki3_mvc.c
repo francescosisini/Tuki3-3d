@@ -118,6 +118,8 @@ oggetto *g_oggetto;
 Giocatore *g_gctr;
 Giocatore gctr_tuki;
 Giocatore gctr_giuli;
+azione act; //azione decisa da tastiera
+char uso_keyboard = 0;
 
 char cammino[LUNGHEZZA_CAMMINO];
 char dsp_cammino[LUNGHEZZA_CAMMINO_VISIBILE+1];
@@ -167,6 +169,8 @@ int main_controller()
       if(ob[oggetto_prossimo].pos_x == gctr_tuki.pos_x+TUKI_DIM-1){
 	
 	azione a = turno_tuki(ob[oggetto_prossimo].pxl, gctr_tuki.stato_giocatore);
+	if(uso_keyboard)
+	  a = act; //sovrarscrive la decisione presa
         
 	model_azione(a);
         
@@ -187,8 +191,8 @@ int main_controller()
       
       if(cm)
 	{
-	  //fine_giocatore(cm);
-	  // exit(0);
+	  fine_giocatore(cm);
+	  exit(0);
 	}
       
       delay(GDELAY);
@@ -209,10 +213,32 @@ int main_controller()
 
 int main(int argc,char* argv[])
 {
+     for(int i=1;i<argc;i++)
+    {
+      if(strcmp(argv[i],"-k") == 0)
+        {
+          uso_keyboard = 1;
+        }
+      if(strcmp(argv[i],"-h") == 0)
+        {
+           printf("\nUSO: tuki3.game [OPZIONI]\n"
+		  "\t-l <livello>\tspecifica il livello [0:9]\n"
+		  "\t-k \tgiocare da tastiera, usa i tasti <p>, <m> e <s> per PREDERE, MANGIARE o SALTARE\n");
+	   exit(0);
+        }
+      if(strcmp(argv[i],"-l") == 0)
+        {
+	  if(argc>i)
+	    livello_corrente = atoi(argv[i+1]);
+        }
+      
+      
+    }
+  
   terminale_crudo();
   inizializza_terminale();
 
-  Initialize(argc,argv);
+  
 
   /* Inizio gioco */
   
@@ -236,7 +262,7 @@ int main(int argc,char* argv[])
   int k;
   
   /* Prepara gli oggetti sul campo e li trasfigura in base alla difficoltà del livello */
-  for(int i=0;i<NUMERO_OGGETTI;i++){
+  for(int i=0;i<NUMERO_OGGETTI-1;i++){
     k=rand()%3;
     int x=(i+2)*((float)(LUNGHEZZA_CAMMINO-LUNGHEZZA_CAMMINO_VISIBILE)/(float)NUMERO_OGGETTI);    
     switch (k){
@@ -254,7 +280,8 @@ int main(int argc,char* argv[])
       break;
     }
   }
-  
+
+  Initialize(argc,argv);
   cancella_schermo();
   
   char *gtitle="  -Il duro cammino- (c)Scuola Sisini 2018-19 ";

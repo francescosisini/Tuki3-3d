@@ -8,7 +8,7 @@
 
 //gcc -o c4 chapter.4.1.c Utils.c -lglut -lGL -lGLU -lGLEW -lm
 
-#define WINDOW_TITLE_PREFIX "Chapter 1"
+#define WINDOW_TITLE_PREFIX "Tuki 3"
 #define N_BUFFERS (NUMERO_OGGETTI+1+1)*2 // (oggetti+tuki+ground)*2
 
 int
@@ -16,11 +16,13 @@ int
   CurrentHeight = 400,
   WindowHandle = 0;
 unsigned FrameCount = 0;
+
 GLuint
   ProjectionMatrixUniformLocation,
   ViewMatrixUniformLocation,
   ModelMatrixUniformLocation,
   VAO[N_BUFFERS/2]={ 0 },
+  vertex_in_buffer[N_BUFFERS/2];
   BufferIds[N_BUFFERS] = { 0 },
   ShaderIds[3] = { 0 };
 
@@ -43,8 +45,17 @@ float translate_z = -0.5;
 
 /*** Variabili del gioco ***/
 extern Giocatore gctr_tuki;
-extern oggetto ob[NUMERO_OGGETTI]; 
+extern oggetto ob[NUMERO_OGGETTI];
+extern azione act;
 
+
+/*** Orientazione Tuki ***/
+float r_y = 0;
+float r_x = 0;
+float r_z = 0;
+#define MAX_X PI/4.
+#define MAX_Y PI/8.
+#define MAX_Z PI/8.
 
 void Initialize(int, char*[]);
 void InitWindow(int, char*[]);
@@ -100,8 +111,8 @@ void Initialize(int argc, char* argv[])
   glDepthFunc(GL_LESS);
   ExitOnGLError("ERROR: Could not set OpenGL depth testing options");
   
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_BACK);
+  //glEnable(GL_CULL_FACE);
+  //glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
   ExitOnGLError("ERROR: Could not set OpenGL culling options");
   
@@ -177,7 +188,7 @@ void RenderFunction(void)
 {
 ++FrameCount;
 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-glClearColor(1.,1.,1.,1);
+glClearColor(.0,.0,.0,1);
 
 /*gluLookAt(
   0,      0,      1.0,
@@ -231,33 +242,36 @@ void TimerFunction(int Value)
 
 void create_tuki(void)
 {
+  float offset = 0;//Tuki appoggia i piedi a 0
+  
+
   const Vertex VERTICES[24] =
     {
       
-      { { 16./33.-0.5,19./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { { 9./33.-0.5,18./33.-0.5,0, 1 }, { 1, 0, 0, 1 } },
-      { {  20./33.-0.5,18./33.-0.5,0, 1 }, { 0, 0, 0, 1 } },
-      { {  12.5/33.-0.5,17./33.-0.5,0, 1 }, { 1, 1, 0, 1 } },
-      { { 18./33.-0.5,17./33.-0.5,0, 1 }, { 1, 0, 0, 1 } },
-      { { 16./33.-0.5,16./33.-0.5,0, 1 }, { 1, 0, 0, 1 } },
-      { {  28./33.-0.5,16./33.-0.5,0, 1 }, { 1, 0, 1, 1 } },
-      { {  16.5/33.-0.5,13./33.-0.5,0, 1 }, { 1, 0, 1, 1 } },
-      { {  32.9/33.-0.5,13./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  10./33.-0.5,12./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  28./33.-0.5,11./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  9./33.-0.5,10./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  17./33.-0.5,10./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  32./33.-0.5,10./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  13./33.-0.5,5./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  0./33.-0.5,4./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  10./33.-0.5,4./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  12./33.-0.5,4./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  14./33.-0.5,4./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  13.5/33.-0.5,2./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  6./33.-0.5,0./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  10./33.-0.5,0./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  13./33.-0.50,0./33.-0.5,0, 1 }, { 0, 0, 1, 1 } },
-      { {  16./33.-0.5,0./33.-0.5,0, 1 }, { 0, 0, 1, 1 } }
+      { { 16./33.+offset,19./33.+offset,0, 1 }, {0 , 0, 0, 1 } }, //A
+      { { 9./33.+offset,18./33.+offset,0, 1 }, { 0, 0, 0, 1 } }, //B
+      { {  20./33.+offset,18./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//C
+      { {  12.5/33.+offset,17./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//D
+      { { 18./33.+offset,17./33.+offset,0, 1 }, { 0, 102./255., 255./255, 1 } },//E
+      { { 16./33.+offset,16./33.+offset,0, 1 }, { 0, 102./255., 255./255, 1 } },//F
+      { {  28./33.+offset,16./33.+offset,0, 1 }, { 1, 1, 0, 1 } },//G
+      { {  16.5/33.+offset,13./33.+offset,0, 1 }, { 1, 1, 0, 1 } },//H
+      { {  32.9/33.+offset,13./33.+offset,0, 1 }, { 1, 1, 0, 1 } },//I
+      { {  10./33.+offset,12./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//J
+      { {  28./33.+offset,11./33.+offset,0, 1 }, { 1, 1, 0, 1 } },//K
+      { {  9./33.+offset,10./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//L
+      { {  17./33.+offset,10./33.+offset,0, 1 }, { 1, 1, 1, 1 } },//M
+      { {  32./33.+offset,10./33.+offset,0, 1 }, { 0, 0, 1, 1 } },//N
+      { {  13./33.+offset,5./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//O
+      { {  0./33.+offset,4./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//P
+      { {  10./33.+offset,4./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//Q
+      { {  12./33.+offset,4./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//R
+      { {  14./33.+offset,4./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//S
+      { {  13.5/33.+offset,2./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//T
+      { {  6./33.+offset,0./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//U
+      { {  10./33.+offset,0./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//V
+      { {  13./33.+offset,0./33.+offset,0, 1 }, { 0, 0, 0, 1 } },//W
+      { {  16./33.+offset,0./33.+offset,0, 1 }, { 0, 0, 0, 1 } }//X
     };
  
   const GLuint INDICES[57] =
@@ -331,30 +345,7 @@ void create_tuki(void)
 
 void create_object(int i)
 {
-  const Vertex VERTICES[8] =
-    {
-      
-      { { -.05f, -.05f,  .15f, 1 }, { 1, 0, 0, 1 } },
-      { { -.05f,  .05f,  .15f, 1 }, { 1, 0, 0, 1 } },
-      { {  .05f,  .05f,  .15f, 1 }, { 1, 0, 0, 1 } },
-      { {  .05f, -.05f,  .15f, 1 }, { 1, 0, 0, 1 } },
-      { { -.05f, -.05f, .05f, 1 }, { 0, 0, 1, 1 } },
-      { { -.05f,  .05f, .05f, 1 }, { 0, 0, 1, 1 } },
-      { {  .05f,  .05f, .05f, 1 }, { 0, 0, 1, 1 } },
-      { {  .05f, -.05f, .05f, 1 }, { 0, 0, 1, 1 } }
-    };
 
-  const GLuint INDICES[36] =
-    {
-      0,2,1,  0,3,2,
-      4,3,0,  4,7,3,
-      4,1,5,  4,0,1,
-      3,6,2,  3,7,6,
-      1,6,5,  1,2,6,
-      7,5,6,  7,4,5
-    };
-
-  
   ShaderIds[0] = glCreateProgram();
   ExitOnGLError("ERROR: Could not create the shader program, stronzo");
 
@@ -382,20 +373,226 @@ void create_object(int i)
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
   ExitOnGLError("ERROR: Could not enable vertex attributes");
-
-  glBindBuffer(GL_ARRAY_BUFFER, BufferIds[4+i*2]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
-  ExitOnGLError("ERROR: Could not bind the VBO to the VAO");
   
-  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)0);
-  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
-  ExitOnGLError("ERROR: Could not set VAO attributes");
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[5+i*2]);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(INDICES), INDICES, GL_STATIC_DRAW);
-  ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
+  //Determina il tipo di oggetto da creare
+  if(ob[i].t == GEMMA)
+    {
+      
+      float y1,y2,y3;
+      y3 = 1;
+      y2 = 0.6;
+      y1 = 0;
+      float norm=8.;
+      
+      const Vertex VERTICES[13] =
+	{
+	  //Piano superiore del diamante
+	  { { 2./norm, y3,  3./norm, 1 }, { 0, 1, 204./255., 1 } },
+	  { { 3./norm,  y3,  4./norm, 1 }, { 0, 0, 1, 1 } },
+	  { { 5./norm,  y3,  4./norm, 1 }, { 0, 1, 204./255., 1 } },
+	  { { 6./norm, y3,  3./norm, 1 }, { 0, 0, 1, 1 } },
+	  { { 5./norm, y3, 2./norm, 1 }, { 0, 1, 204./255., 1 } },
+	  { { 3./norm, y3, 2./norm, 1 }, { 0, 0, 1, 1 } },
+	  //Piano di mezzo
+	  { { 0./norm, y2,  3./norm, 1 }, { 0, 0, 1, 1 } },
+	  { { 2./norm,  y2,  6./norm, 1 }, { 0, 0, 1, 1 } },
+	  { { 6./norm,  y2,  6./norm, 1 }, { 0, 1, 204./255., 1 } },
+	  { { 8./norm, y2,  3./norm, 1 }, { 0, 1, 204./255., 1 } },
+	  { { 6./norm, y2, 0./norm, 1 }, { 0, 0, 1, 1 } },
+	  { { 2./norm, y2, 0./norm, 1 }, { 0, 0, 1, 1 } },
+	  //Vertice
+	  { { 4./norm, y1, 3./norm, 1 }, { 1, 1, 1, 1 } }
+	};
+      
+      vertex_in_buffer[i]=66;
+      const GLuint INDICES[66] =
+	{
+	  //Faccia superiore
+	  0,5,1,
+	  //Facce laterali superiori
+	  1,5,4,
+	  1,4,2,
+	  2,4,3,
+	  6,5,0,
+	  6,11,5,
+	  5,11,10,
+	  5,10,4,
+	  4,10,9,
+	  4,9,3,
+	  3,9,2,
+	  2,9,8,
+	  2,8,7,
+	  1,2,7,
+	  7,0,1,
+	  7,6,0,
+	  //Facce laterali inferiori
+	  6,12,11,
+	  11,12,10,
+	  10,12,9,
+	  9,12,8,
+	  8,12,7,
+	  7,12,6
+	};
+    
   
-  glBindVertexArray(0);
+  
+
+      glBindBuffer(GL_ARRAY_BUFFER, BufferIds[4+i*2]);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
+      ExitOnGLError("ERROR: Could not bind the VBO to the VAO");
+      
+      glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)0);
+      glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
+      ExitOnGLError("ERROR: Could not set VAO attributes");
+      
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[5+i*2]);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(INDICES), INDICES, GL_STATIC_DRAW);
+      ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
+      
+      glBindVertexArray(0);
+    }
+  
+  //Pozione
+   if(ob[i].t == POZIONE)
+    {
+      float r,g,b;
+      r=205./255;
+      g=205./255;
+      b=255./255;
+      float y1,y2,y3;
+      y3 = 1;
+      y2 = 0.4;
+      y1 = 0;
+      float norm=5.;
+      
+      const Vertex VERTICES[12] =
+	{
+	  //Base della pozione
+	  { { 0./norm, y1,  0./norm, 1 }, { r, g, b, 1 } },
+	  { { 5./norm,  y1,  0./norm, 1 }, { r, g, b, 1 } },
+	  { { 5./norm,  y1,  5./norm, 1 }, { r, g, b, 1 } },
+	  { { 0./norm, y1,  5./norm, 1 }, { r, g, b, 1 } },
+	  //Collo
+	  { { 3./norm, y2, 2./norm, 1 }, { r, g, b, 1 } },
+	  { { 4./norm, y2, 2./norm, 1 }, { r, g, b, 1 } },
+	  { { 4./norm, y2, 3./norm, 1 }, { r, g, b, 1 } },
+	  { { 3./norm, y2, 3./norm, 1 }, { r, g, b, 1 } },
+	  //Tappo
+	  { { 3./norm, y3, 2./norm, 1 }, { r, g, b, 1 } },
+	  { { 4./norm, y3, 2./norm, 1 }, { r, g, b, 1 } },
+	  { { 4./norm, y3, 3./norm, 1 }, { r, g, b, 1 } },
+	  { { 3./norm, y3, 3./norm, 1 }, { r, g, b, 1 } }
+	};
+      
+      vertex_in_buffer[i]=54;
+      const GLuint INDICES[54] =
+	{
+	  //tappo
+	  8,9,10,
+	  10,11,8,
+	  8,4,9,
+	  4,5,9,
+	  5,9,10,
+	  1,6,5,
+	  7,10,11,
+	  11,6,7,
+	  4,8,11,
+	  11,7,4,
+	  0,5,4,
+	  0,1,5,
+	  5,1,6,
+	  1,2,6,
+	  6,2,7,
+	  7,2,3,
+	  7,3,4,
+	  4,3,0
+	};
+    
+  
+  
+
+      glBindBuffer(GL_ARRAY_BUFFER, BufferIds[4+i*2]);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
+      ExitOnGLError("ERROR: Could not bind the VBO to the VAO");
+      
+      glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)0);
+      glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
+      ExitOnGLError("ERROR: Could not set VAO attributes");
+      
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[5+i*2]);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(INDICES), INDICES, GL_STATIC_DRAW);
+      ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
+      
+      glBindVertexArray(0);
+    }
+
+   //MELANZANA
+   if(ob[i].t == MELANZANA)
+    {
+      float r,g,b;
+      r = 184./255;
+      g = 0./255;
+      b = 230./255;
+      r=0;
+      g=1;
+      b=0;
+      float y1,y2,y3,y4;
+      y4 = 1.;
+      y3 = 0.8;
+      y2 = 0.3;
+      y1 = 0;
+      float norm=4.;
+      
+      const Vertex VERTICES[8] =
+	{
+	  //Base melanzana
+	  { { 2./norm, y1,  2./norm, 1 }, { r, g, b, 1 } },
+	  
+	  //Pancia
+	  { { 2./norm, y2, 0./norm, 1 }, { r, g, b, 1 } },
+	  { { 4./norm, y2, 2./norm, 1 }, { r, g, b, 1 } },
+	  { { 2./norm, y2, 4./norm, 1 }, { r, g, b, 1 } },
+	  { { 0./norm, y2, 2./norm, 1 }, { r, g, b, 1 } },
+	  //Sommità
+	  { { 2./norm, y3, 0./norm, 1 }, { r, g, b, 1 } },
+	  
+	  //Picciuolo
+	  { { 1./norm, y4, 2./norm, 1 }, { 0, 1, 0, 1 } },
+	  { { 2./norm, y4, 2./norm, 1 }, { 0, 1, 0, 1 } }
+	};
+      
+      vertex_in_buffer[i]=27;
+      const GLuint INDICES[27] =
+	{
+	  4,0,1,
+	  1,2,3,
+	  2,0,3,
+	  3,0,4,
+	  5,1,4,
+	  5,4,3,
+	  5,3,2,
+	  5,2,1,
+	  6,5,7
+	  
+	};
+    
+  
+  
+
+      glBindBuffer(GL_ARRAY_BUFFER, BufferIds[4+i*2]);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES), VERTICES, GL_STATIC_DRAW);
+      ExitOnGLError("ERROR: Could not bind the VBO to the VAO");
+      
+      glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)0);
+      glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VERTICES[0]), (GLvoid*)sizeof(VERTICES[0].Position));
+      ExitOnGLError("ERROR: Could not set VAO attributes");
+      
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BufferIds[5+i*2]);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(INDICES), INDICES, GL_STATIC_DRAW);
+      ExitOnGLError("ERROR: Could not bind the IBO to the VAO");
+      
+      glBindVertexArray(0);
+    }
 }
 
 
@@ -403,10 +600,10 @@ void create_ground(void)
 {
   const Vertex VERTICES[4] =
     {
-      {{-1,-0.2,-1,1},{0,1,0,1}},
-      {{1,-0.2,-1,1},{0,1,0,1}},
-      {{1,-0.2,1,1},{0,1,0,1}},
-      {{-1,-0.2,1,1},{0,1,0,1}}
+      {{-1,-0.2,-1,1},{153./255,51./255,0,1}},
+      {{1,-0.2,-1,1},{153./255,51./255,0,1}},
+      {{1,-0.2,1,1},{153./255,51./255,0,1}},
+      {{-1,-0.2,1,1},{153./255,51./255,0,1}}
     };
   
   const GLuint INDICES[12] =
@@ -474,12 +671,21 @@ void DestroyCube(void)
 void draw_tuki(void)
 {
   float CubeAngle;
+  static float inc_x = 0.1;
+  static float inc_z = 0.2;
+  static float inc_y = 0.1;
+  /* Calcola la camminata */
+  r_y+= inc_y;
+  if(r_y >= MAX_Y || r_y<=-MAX_X) inc_y = -inc_y;
+  r_z += inc_z;
+  if(r_z >= MAX_Z || r_z<=-MAX_Z) inc_z = -inc_z;
   
   ModelMatrix = IDENTITY_MATRIX;
   //RotateAboutY(&ModelMatrix, CubeAngle);
-  //RotateAboutX(&ModelMatrix, PI);
+  RotateAboutY(&ModelMatrix, r_y);
+  RotateAboutZ(&ModelMatrix, r_z);
   ScaleMatrix(&ModelMatrix, 0.05,0.05, 0);
-  TranslateMatrix(&ModelMatrix, gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO, -0.17, 0);
+  TranslateMatrix(&ModelMatrix, gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO, -0.2, 0);
   
   glUseProgram(ShaderIds[0]);
   ExitOnGLError("ERROR: Could not use the shader program, cazzo");
@@ -507,8 +713,8 @@ void draw_object(int o_index)
     
   ModelMatrix = IDENTITY_MATRIX;
   //RotateAboutY(&ModelMatrix, CubeAngle);
-  ScaleMatrix(&ModelMatrix, 0.4,0.4, 0.4);
-  TranslateMatrix(&ModelMatrix, ob[i].pos_x/(double)LUNGHEZZA_CAMMINO,-0.2, -0.02);
+  ScaleMatrix(&ModelMatrix, 0.02,0.02, 0.02);
+  TranslateMatrix(&ModelMatrix, ob[i].pos_x/(double)LUNGHEZZA_CAMMINO,-0.17, -0.02);
   
     
   glUseProgram(ShaderIds[0]);
@@ -521,7 +727,7 @@ void draw_object(int o_index)
   glBindVertexArray(VAO[2+i]);
   ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
   
-  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (GLvoid*)0);
+  glDrawElements(GL_TRIANGLES, vertex_in_buffer[i], GL_UNSIGNED_INT, (GLvoid*)0);
   ExitOnGLError("ERROR: Could not draw the cube");
   
   glBindVertexArray(2+i);
@@ -538,7 +744,7 @@ void draw_ground(void)
   ModelMatrix = IDENTITY_MATRIX;
   //RotateAboutZ(&ModelMatrix, PI/2.);
   //RotateAboutX(&ModelMatrix, PI/9.);
-
+  ScaleMatrix(&ModelMatrix, 10,1, 2);
   glUseProgram(ShaderIds[0]);
   ExitOnGLError("ERROR: Could not use the shader program, cazzo");
   
@@ -558,12 +764,6 @@ void draw_ground(void)
     
 }
 
-void setSpin(float x, float y, float z)
-{
-	spin_x = x;
-	spin_y = y;
-	spin_z = z;
-}
 
 void keyboard(unsigned char key, int x, int y)
 {
@@ -586,23 +786,30 @@ void keyboard(unsigned char key, int x, int y)
 	  
 	  glutPostRedisplay();
 	}
-	else if(key=='a')
-	{
-		setSpin(1.0,1.0,1.0);
-		glutPostRedisplay();
-	}
-
+	
 	else if(key=='i')
-	{
-		translate_z+=0.01;
-		glutPostRedisplay();
-	}
+	  {
+	    translate_z+=0.01;
+	    glutPostRedisplay();
+	  }
 	else if(key=='o')
-	{
-		translate_z-=0.01;
-		glutPostRedisplay();
-	}
-
+	  {
+	    translate_z-=0.01;
+	    glutPostRedisplay();
+	  }
+	else if(key=='m')
+	  {
+	    act = MANGIA;
+	  }
+	else if(key=='s')
+	  {
+	    act = SALTA;
+	  }
+	else if(key=='p')
+	  {
+	    act = PRENDI;
+	  }
+	
 
 
 }
