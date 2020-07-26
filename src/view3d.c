@@ -1,5 +1,5 @@
 /* 3D viewer per Tuki3
-   Copyright (C) 2018-2020  Valentina e Francesco Sisini
+   Copyright (C) 2018-2020  Valentina Sisini
    francescomichelesisini@gmail.com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,12 +51,12 @@ float CubePosition = 0;
 clock_t LastTime = 0;
 
 /*** Variabili View ***/
-float rot_x = 0;
+float rot_x = -0.05;
 float rot_y = 0;
 float rot_z = 0;
 float trasla_x = 0.0;
-float trasla_y = 0.0;
-float trasla_z = -0.5;
+float trasla_y = 0.2;
+float trasla_z = -0.2;
 
 /*** Variabili del gioco ***/
 extern Giocatore gctr_tuki;
@@ -114,7 +114,7 @@ void Initialize(int argc, char* argv[])
     glGetString(GL_VERSION)
   );
   glGetError();
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+  glClearColor(0.1f, 0.1f, 0.1f, 1.f);
 
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
@@ -164,7 +164,7 @@ void InitWindow(int argc, char* argv[])
     );
     exit(EXIT_FAILURE);
   }
-
+  glutPositionWindow(0,600);
   glutReshapeFunc(ResizeFunction);
   glutDisplayFunc(RenderFunction);
   glutIdleFunc(main_controller);
@@ -194,7 +194,7 @@ void RenderFunction(void)
 {
 ++FrameCount;
 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-glClearColor(.0,.0,.0,1);
+glClearColor(.2,.2,.2,1);
 
 /*gluLookAt(
   0,      0,      1.0,
@@ -205,8 +205,8 @@ ViewMatrix = IDENTITY_MATRIX;
 RotateAboutX(&ViewMatrix,rot_x);
 RotateAboutY(&ViewMatrix,rot_y);
 RotateAboutZ(&ViewMatrix,rot_z);
-TranslateMatrix(&ViewMatrix,-(gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO), 0, trasla_z);
-ScaleMatrix(&ViewMatrix,5,5,5);
+TranslateMatrix(&ViewMatrix,-(gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO), trasla_y, trasla_z);
+ScaleMatrix(&ViewMatrix,8,8,8);
 
 //Disegna:
  draw_tuki();
@@ -756,7 +756,7 @@ void draw_tuki(void)
   RotateAboutY(&ModelMatrix, r_y);
   RotateAboutZ(&ModelMatrix, r_z);
   ScaleMatrix(&ModelMatrix, 0.05,0.05, 0);
-  TranslateMatrix(&ModelMatrix, gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO, -0.2, 0);
+  TranslateMatrix(&ModelMatrix, gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO, -0.19, 0);
   
   glUseProgram(ShaderIds[0]);
   ExitOnGLError("ERROR: Could not use the shader program, cazzo");
@@ -814,7 +814,7 @@ void draw_target(void)
   //RotateAboutZ(&ModelMatrix, PI/2.);
   //RotateAboutX(&ModelMatrix, PI/9.);
   ScaleMatrix(&ModelMatrix, 0.7,0.7, 0.7);
-  TranslateMatrix(&ModelMatrix, 1,-0.17, -0.02);
+  TranslateMatrix(&ModelMatrix, 1,-0.17, -0.5);
   glUseProgram(ShaderIds[0]);
   ExitOnGLError("ERROR: Could not use the shader program, cazzo");
   
@@ -843,7 +843,7 @@ void draw_object(int o_index)
   ModelMatrix = IDENTITY_MATRIX;
   //RotateAboutY(&ModelMatrix, CubeAngle);
   ScaleMatrix(&ModelMatrix, 0.02,0.02, 0.02);
-  TranslateMatrix(&ModelMatrix, ob[i].pos_x/(double)LUNGHEZZA_CAMMINO,-0.17, -0.02);
+  TranslateMatrix(&ModelMatrix, ob[i].pos_x/(double)LUNGHEZZA_CAMMINO,-0.195, -0.02);
   
     
   glUseProgram(ShaderIds[0]);
@@ -870,7 +870,7 @@ void keyboard(unsigned char key, int x, int y)
 
 	if(key=='x')
 	{
-	  rot_x+=0.1;
+	  rot_x-=0.1;
 	  
 	  glutPostRedisplay();
 	}
