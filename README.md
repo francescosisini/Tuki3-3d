@@ -13,6 +13,7 @@ I giochi Tuki e Giuli 1,2,3,4 e 5 sono dei giochi che vengono giocati sviuppando
 - entrare nella cartella ```src``` e compilare Tuki3_3d con:
 ```gcc -o tuki3.play tuki3_mvc.c turno_tuki.c view3d.c Utils.c -lglut -lGL -lGLU -lGLEW -lm```
 - lanciare ```./tuki3.play -h``` e seguire le istruzioni per giocare
+
 ![Istro](Istruzione_T3d.png)
 
 ![Tuki3_3d](Tuki3_3d.png)
