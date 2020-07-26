@@ -10,3 +10,5 @@ Per provare il gioco:
 ```gcc -o tuki3.play tuki3_mvc.c turno_tuki.c view3d.c Utils.c -lglut -lGL -lGLU -lGLEW -lm```
 
 ![Tuki3_3d](Tuki3_3d.png)
+##Credits
+La libreria Utils è presa da [OpenGl Book](https://openglbook.com/)
