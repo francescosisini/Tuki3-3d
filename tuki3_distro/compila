@@ -1,1 +1,0 @@
-gcc -o tuki3.game tuki3_mvc.o turno_tuki.c
