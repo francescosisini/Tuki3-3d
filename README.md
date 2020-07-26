@@ -5,7 +5,7 @@ realizza  una interfaccia 3d con openGL per Tuki3
 L'idea è nata per il progetto di Grafica Computerizzata di [Valentina](https://github.com/ValentinaSisini) che prevedeva lo sviluppo di una applicazione 3d implementata con la libreria Open Source per la renderizzazione in 3d OpenGL
 
 ## Il gioco-programma
-I giochi Tuki e Giuli 1,2,3,4 e 5 sono dei giochi che vengono giocati sviuppando l'algorito dell'agent invece che usando un controller o la tastiera. In questa versione del gioco però, ai fini dimostrativi, è possibile anche usare la tastiera
+I giochi Tuki e Giuli 1,2,3,4 e 5 sono dei giochi che vengono giocati sviuppando l'algoritmo dell'agent invece che usando un controller o la tastiera. In questa versione del gioco però, ai fini dimostrativi, è possibile anche usare la tastiera
 
 ### Per provare il gioco:
 - scaricare e installare OpenGL e Glew per Linux
