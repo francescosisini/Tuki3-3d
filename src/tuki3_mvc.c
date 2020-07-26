@@ -130,100 +130,28 @@ int livello_corrente=0;
 
 /*** Game ***/
 
-int main_controller()
-{
-  
-  /*** Gioco ***/
-  static int r = -1;
-  static int avanzamento_cammino=1;
-  static int oggetto_prossimo=0;
-  r++;
-  if(r<LUNGHEZZA_CAMMINO-LUNGHEZZA_CAMMINO_VISIBILE)
-    {
-      /*display players, score and objects*/
-      view_stampa_giocatore(&gctr_tuki,r);
-      view_punteggio(&(gctr_tuki.stato_giocatore),(float)r/(float)(LUNGHEZZA_CAMMINO-LUNGHEZZA_CAMMINO_VISIBILE));
-          
-      for(int i=0;i<NUMERO_OGGETTI;i++)
-	{
-	  view_oggetto(ob+i,r,r+LUNGHEZZA_CAMMINO_VISIBILE);
-	}
-      if(!ob[oggetto_prossimo].exists)oggetto_prossimo+=1;
-      g_oggetto=ob+oggetto_prossimo;
-      
-      memcpy(dsp_cammino,cammino+avanzamento_cammino,LUNGHEZZA_CAMMINO_VISIBILE);
-      dsp_cammino[LUNGHEZZA_CAMMINO_VISIBILE]=0;
-      printf("\x1b[%d;%dH\x1b[38;5;94m%s\x1b[0m",Y_CAMMINO,1,dsp_cammino);
-      
-      fflush(stdout);
-      
-      /* Passo avanti*/
-      avanzamento_cammino+=1;
-      gctr_tuki.pos_xold=gctr_tuki.pos_x;
-      gctr_tuki.pos_x+=1;
-      gctr_tuki.stato_giocatore.nutrienti-=D_NTRL;
-      gctr_tuki.stato_giocatore.energia-=D_NRGY;
-      
-      
-      /*Verifica collisione*/
-      if(ob[oggetto_prossimo].pos_x == gctr_tuki.pos_x+TUKI_DIM-1){
-	
-	azione a = turno_tuki(ob[oggetto_prossimo].pxl, gctr_tuki.stato_giocatore);
-	if(uso_keyboard)
-	  a = act; //sovrarscrive la decisione presa
-        
-	model_azione(a);
-        
-	if(!ob[oggetto_prossimo].exists){
-	  view_nuvoletta(ob+oggetto_prossimo,r);
-	}
-      }
-           
-      
-      if(ob[oggetto_prossimo].exists&&(ob[oggetto_prossimo].pos_x == gctr_tuki.pos_x+TUKI_DIM-1)){
-	printf("\x1b[%d;1HAzione: <Nessuna azione>   ",MENU_ROW+1);
-	model_punteggio(&gctr_tuki,ob+oggetto_prossimo);
-	(ob+oggetto_prossimo)->exists=0;
-	model_distruggi(ob+oggetto_prossimo,r);
-      }
-      
-      char * cm = model_disfatta(&gctr_tuki);
-      
-      if(cm)
-	{
-	  fine_giocatore(cm);
-	  exit(0);
-	}
-      
-      delay(GDELAY);
-    }
-  else
-    {
-      cancella_schermo();
-      
-      mostra_livello(livello_corrente,1);
-      
-      cancella_schermo();
-      
-      /*Completati tutti i livelli*/
-      mostra_finale(dsp_cammino);
-      exit(0);
-    }
-}
 
 int main(int argc,char* argv[])
 {
-     for(int i=1;i<argc;i++)
+  
+  int salta_presentazione = 0;
+  
+  for(int i=1;i<argc;i++)
     {
       if(strcmp(argv[i],"-k") == 0)
         {
           uso_keyboard = 1;
         }
+       if(strcmp(argv[i],"-s") == 0)
+        {
+          salta_presentazione = 1;
+        }
       if(strcmp(argv[i],"-h") == 0)
         {
-           printf("\nUSO: tuki3.game [OPZIONI]\n"
+	  printf("\nUSO: tuki3.game [OPZIONI]\n"
 		  "\t-l <livello>\tspecifica il livello [0:9]\n"
-		  "\t-k \tgiocare da tastiera, usa i tasti <p>, <m> e <s> per PREDERE, MANGIARE o SALTARE\n");
+		  "\t-k \tgiocare da tastiera, usa i tasti <p>, <m> e <s> per PREDERE, MANGIARE o SALTARE\n"
+		 "\t-s \tsalta la presentazione\n");
 	   exit(0);
         }
       if(strcmp(argv[i],"-l") == 0)
@@ -245,16 +173,16 @@ int main(int argc,char* argv[])
   gctr_tuki.id=1;
   g_gctr=&gctr_tuki;
   model_inizializza(&gctr_tuki,X0_TUKI,T0_NTRL,0,T0_NRGY,"Tuki");
-  
-  //mostra_presentazione();
+
+  if(!salta_presentazione)
+    mostra_presentazione();
   
   cancella_schermo();
   
   mostra_livello(livello_corrente,0);
   
   cancella_schermo();
-  
-  
+    
   model_inizializza(&gctr_tuki,X0_TUKI,T0_NTRL,0,T0_NRGY,"Tuki");
   model_inizializza_cammino(cammino);
   
@@ -288,7 +216,12 @@ int main(int argc,char* argv[])
   char *tup=   " --------------- ";
   
   printf("\x1b[%d;%dH\x1b[38;5;26m%s\x1b[0m Livello %d",Y_CAMMINO+1,((int)(MARGIN(gtitle))),gtitle,livello_corrente+1);
+
+
+  /* Inizio Gioco */
+  //Eventi
   glutMainLoop();
+  //Controllo diretto
   /*
   while(1)
     {
@@ -296,6 +229,132 @@ int main(int argc,char* argv[])
     }
   */
 }
+
+int main_controller()
+{
+  
+  /*** Gioco ***/
+  static int r = -1;
+  static int finale = 0;
+  static int avanzamento_cammino=1;
+  static int oggetto_prossimo=0;
+  r++;
+  if(r<LUNGHEZZA_CAMMINO-LUNGHEZZA_CAMMINO_VISIBILE)
+    {
+      /*display players, score and objects*/
+      view_stampa_giocatore(&gctr_tuki,r);
+      view_punteggio(&(gctr_tuki.stato_giocatore),(float)r/(float)(LUNGHEZZA_CAMMINO-LUNGHEZZA_CAMMINO_VISIBILE));
+      
+      for(int i=0;i<NUMERO_OGGETTI;i++)
+	{
+	  view_oggetto(ob+i,r,r+LUNGHEZZA_CAMMINO_VISIBILE);
+	}
+      if(!ob[oggetto_prossimo].exists)oggetto_prossimo+=1;
+      g_oggetto=ob+oggetto_prossimo;
+      
+      memcpy(dsp_cammino,cammino+avanzamento_cammino,LUNGHEZZA_CAMMINO_VISIBILE);
+      dsp_cammino[LUNGHEZZA_CAMMINO_VISIBILE]=0;
+      printf("\x1b[%d;%dH\x1b[38;5;94m%s\x1b[0m",Y_CAMMINO,1,dsp_cammino);
+      
+      fflush(stdout);
+      
+      /* Passo avanti*/
+      avanzamento_cammino+=1;
+      gctr_tuki.pos_xold=gctr_tuki.pos_x;
+      gctr_tuki.pos_x+=1;
+      gctr_tuki.stato_giocatore.nutrienti-=D_NTRL;
+      gctr_tuki.stato_giocatore.energia-=D_NRGY;
+      
+      
+      /*Verifica collisione*/
+      if(ob[oggetto_prossimo].pos_x == gctr_tuki.pos_x+TUKI_DIM-1){
+	
+	azione a = turno_tuki(ob[oggetto_prossimo].pxl, gctr_tuki.stato_giocatore);
+	if(uso_keyboard)
+	  a = act; //sovrarscrive la decisione presa
+        
+	model_azione(a);
+        
+	if(!ob[oggetto_prossimo].exists)
+	  {
+	    view_nuvoletta(ob+oggetto_prossimo,r);
+	  }
+      }
+      
+      
+      if(ob[oggetto_prossimo].exists&&(ob[oggetto_prossimo].pos_x == gctr_tuki.pos_x+TUKI_DIM-1)){
+	printf("\x1b[%d;1HAzione: <Nessuna azione>   ",MENU_ROW+1);
+	model_punteggio(&gctr_tuki,ob+oggetto_prossimo);
+	(ob+oggetto_prossimo)->exists=0;
+	model_distruggi(ob+oggetto_prossimo,r);
+      }
+      
+      char * cm = model_disfatta(&gctr_tuki);
+      
+      if(cm)
+	{
+	  fine_giocatore(cm);
+	  exit(0);
+	}
+      
+      delay(GDELAY);
+    }
+  else
+    {
+      cancella_schermo();
+	  
+      mostra_livello(livello_corrente,1);
+      
+      cancella_schermo();
+      
+      /*Completati tutti i livelli*/
+      mostra_finale(dsp_cammino);
+      exit(0);
+      /*
+      
+      if(!finale)
+	{
+	  cancella_schermo();
+	  
+	  mostra_livello(livello_corrente,1);
+	  
+	  cancella_schermo();
+      
+	  cancella_schermo();
+	  printf("\x1b[%d;%dH\x1b[38;5;94m%s\x1b[0m",Y_CAMMINO,1,dsp_cammino);
+	  (*g_gctr).pos_x=X0_TUKI;
+	  finale = 1;
+	}
+      if((*g_gctr).pos_x<LUNGHEZZA_CAMMINO_VISIBILE-35)
+	{ 
+	  (*g_gctr).pos_x++;
+	  view_stampa_giocatore(g_gctr,0);
+	  view_aumentata(X0_TUKI+20, LUNGHEZZA_CAMMINO_VISIBILE-10,goal);
+	  (*g_gctr).pos_xold=(*g_gctr).pos_x;
+	  fflush(stdout);
+	  delay(100000);
+	  return;
+	  
+
+	}
+      
+      view_aumentata(LUNGHEZZA_CAMMINO_VISIBILE-10, LUNGHEZZA_CAMMINO_VISIBILE-10,ladyb);
+      fflush(stdout);
+      delay(1000000);
+      if((*g_gctr).pos_x<LUNGHEZZA_CAMMINO_VISIBILE-18)
+	{ 
+	  (*g_gctr).pos_x++;
+	  view_stampa_giocatore(g_gctr,0);  
+	  (*g_gctr).pos_xold=(*g_gctr).pos_x;
+	  fflush(stdout);
+	  delay(100);
+	  return;
+	}
+      exit(0);
+      */
+    }
+}
+
 char * model_disfatta(Giocatore *gctr)
 {
    if(gctr->stato_giocatore.tossine>MAX_TOX) return("TUKI INTOSSICATO!");

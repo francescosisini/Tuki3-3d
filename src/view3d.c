@@ -1,3 +1,18 @@
+/* 3D viewer per Tuki3
+   Copyright (C) 2018-2020  Valentina e Francesco Sisini
+   francescomichelesisini@gmail.com
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 #include "tuki3.h"
 #include "Utils.h"
 #include <stdlib.h>
@@ -36,12 +51,12 @@ float CubePosition = 0;
 clock_t LastTime = 0;
 
 /*** Variabili View ***/
-float spin_x = 0;
-float spin_y = 0;
-float spin_z = 0;
-float translate_x = 0.0;
-float translate_y = 0.0;
-float translate_z = -0.5;
+float rot_x = 0;
+float rot_y = 0;
+float rot_z = 0;
+float trasla_x = 0.0;
+float trasla_y = 0.0;
+float trasla_z = -0.5;
 
 /*** Variabili del gioco ***/
 extern Giocatore gctr_tuki;
@@ -63,10 +78,10 @@ void ResizeFunction(int, int);
 void RenderFunction(void);
 void TimerFunction(int);
 void IdleFunction(void);
-void create_tuki(void);
-void create_object(int i);
-void create_ground(void);
-void create_target(void);
+void crea_tuki(void);
+void crea_object(int i);
+void crea_ground(void);
+void crea_target(void);
 
 void DestroyCube(void);
 void draw_tuki(void);
@@ -75,16 +90,7 @@ void draw_ground(void);
 void draw_target(void);
 int main_controller();
 void keyboard(unsigned char key, int x, int y);
-/*
-int main(int argc, char* argv[])
-{
-  Initialize(argc, argv);
 
-  glutMainLoop();
-  
-  exit(EXIT_SUCCESS);
-}
-*/
 void Initialize(int argc, char* argv[])
 {
   GLenum GlewInitResult;
@@ -112,28 +118,24 @@ void Initialize(int argc, char* argv[])
 
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
-  ExitOnGLError("ERROR: Could not set OpenGL depth testing options");
-  
+    
   //glEnable(GL_CULL_FACE);
   //glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
-  ExitOnGLError("ERROR: Could not set OpenGL culling options");
-  
+    
   ModelMatrix = IDENTITY_MATRIX;
   ProjectionMatrix = IDENTITY_MATRIX;
   ViewMatrix = IDENTITY_MATRIX;
   TranslateMatrix(&ViewMatrix, 3, 0, -5);
-  
-  //RotateAboutY(&ViewMatrix, PI/8.);
-  create_tuki();
-  create_ground();
-  create_target();
+
+  /* Vengono creati Campo, Personaggi e Oggetti */
+  crea_tuki();
+  crea_ground();
+  crea_target();
   for(int i=0;i<NUMERO_OGGETTI;i++)
     {
-      create_object(i);
+      crea_object(i);
     }
-  
-  
 }
 
 void InitWindow(int argc, char* argv[])
@@ -167,7 +169,6 @@ void InitWindow(int argc, char* argv[])
   glutDisplayFunc(RenderFunction);
   glutIdleFunc(main_controller);
   glutTimerFunc(0, TimerFunction, 0);
-  glutCloseFunc(DestroyCube);
   glutKeyboardFunc(keyboard);
 }
 
@@ -201,10 +202,10 @@ glClearColor(.0,.0,.0,1);
   0.0,    0.0,    1.0);
 */
 ViewMatrix = IDENTITY_MATRIX;
-RotateAboutX(&ViewMatrix,spin_x);
-RotateAboutY(&ViewMatrix,spin_y);
-RotateAboutZ(&ViewMatrix,spin_z);
-TranslateMatrix(&ViewMatrix,-(gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO), 0, translate_z);
+RotateAboutX(&ViewMatrix,rot_x);
+RotateAboutY(&ViewMatrix,rot_y);
+RotateAboutZ(&ViewMatrix,rot_z);
+TranslateMatrix(&ViewMatrix,-(gctr_tuki.pos_x/(double)LUNGHEZZA_CAMMINO), 0, trasla_z);
 ScaleMatrix(&ViewMatrix,5,5,5);
 
 //Disegna:
@@ -248,7 +249,7 @@ void TimerFunction(int Value)
   glutTimerFunc(250, TimerFunction, 1);
 }
 
-void create_tuki(void)
+void crea_tuki(void)
 {
   float offset = 0;//Tuki appoggia i piedi a 0
   
@@ -352,7 +353,7 @@ void create_tuki(void)
 }
 
 
-void create_ground(void)
+void crea_ground(void)
 {
   const Vertex VERTICES[4] =
     {
@@ -411,21 +412,35 @@ void create_ground(void)
 }
 
 
-void create_target(void)
+void crea_target(void)
 {
-  double scale = 9.;
-  const Vertex VERTICES[4] =
+  double scale = 8.;
+  const Vertex VERTICES[12] =
     {
-      {{0,0,0,1},{1.,1.,1.,1}},
-      {{0,0,1./scale,1}, {1.,1.,1.,1}},
-      {{0,5./scale,1.,1},{1.,1.,1.,1}},
-      {{0,5./scale,0,1},{1.,1.,1.,1}}
+      {{0,0,0,1},{1.,1.,1.,1}},//0
+      {{0,0,1./scale,1}, {1.,1.,1.,1}},//1
+      {{0,5./scale,1./scale,1},{1.,1.,1.,1}},//2
+      {{0,5./scale,0,1},{1.,1.,1.,1}},//3
+      {{0,3./scale,1./scale,1},{1.,0.,0.,1}},//4
+      {{0,5./scale,4./scale,1},{1.,1.,1.,1}},//5
+      {{0,3./scale,4./scale,1},{1.,1.,1.,1}},//6
+      {{0,3./scale,7./scale,1},{1.,0.,0.,1}},//7
+      {{0,5./scale,7./scale,1},{1.,1.,1.,1}},//8
+      {{0,0./scale,7./scale,1},{1.,1.,1.,1}},//9
+      {{0,0./scale,8./scale,1},{1.,1.,1.,1}},//10
+      {{0,5./scale,8./scale,1},{1.,1.,1.,1}}//11
     };
   
-  const GLuint INDICES[6] =
+  const GLuint INDICES[24] =
     {
       0,1,2,
-      2,3,0
+      2,3,0,
+      2,4,6,
+      6,5,2,
+      6,7,8,
+      8,5,6,
+      8,9,10,
+      8,10,11
     };
   ShaderIds[0] = glCreateProgram();
   ExitOnGLError("ERROR: Could not create the shader program, cazzo");
@@ -470,21 +485,7 @@ void create_target(void)
   glBindVertexArray(0);
 }
 
-void DestroyCube(void)
-{
-  glDetachShader(ShaderIds[0], ShaderIds[1]);
-  glDetachShader(ShaderIds[0], ShaderIds[2]);
-  glDeleteShader(ShaderIds[1]);
-  glDeleteShader(ShaderIds[2]);
-  glDeleteProgram(ShaderIds[0]);
-  ExitOnGLError("ERROR: Could not destroy the shaders");
-
-  glDeleteBuffers(2, &BufferIds[1]);
-  glDeleteVertexArrays(1, &BufferIds[0]);
-  ExitOnGLError("ERROR: Could not destroy the buffer objects");
-}
-
-void create_object(int i)
+void crea_object(int i)
 {
 
   ShaderIds[0] = glCreateProgram();
@@ -824,7 +825,7 @@ void draw_target(void)
   glBindVertexArray(VAO[2]);
   ExitOnGLError("ERROR: Could not bind the VAO for drawing purposes");
   
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (GLvoid*)0);
+  glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, (GLvoid*)0);
   ExitOnGLError("ERROR: Could not draw the Ground");
   
   glBindVertexArray(1);
@@ -869,31 +870,31 @@ void keyboard(unsigned char key, int x, int y)
 
 	if(key=='x')
 	{
-	  spin_x+=0.1;
+	  rot_x+=0.1;
 	  
 	  glutPostRedisplay();
 	}
 	else if(key=='y')
 	{
-	  spin_y+=0.1;
+	  rot_y+=0.1;
 	  
 	  glutPostRedisplay();
 	}
 	else if(key=='z')
 	{
-	  spin_z+=0.1;
+	  rot_z+=0.1;
 	  
 	  glutPostRedisplay();
 	}
 	
 	else if(key=='i')
 	  {
-	    translate_z+=0.01;
+	    trasla_z+=0.01;
 	    glutPostRedisplay();
 	  }
 	else if(key=='o')
 	  {
-	    translate_z-=0.01;
+	    trasla_z-=0.01;
 	    glutPostRedisplay();
 	  }
 	else if(key=='m')
